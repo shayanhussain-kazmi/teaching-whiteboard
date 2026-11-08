@@ -4,7 +4,7 @@ A free, offline-first digital whiteboard for teachers who teach online with a pe
 
 **Live app:** https://shayanhussain-kazmi.github.io/teaching-whiteboard/
 
-![Screenshot](screenshot.png)
+![Screenshot](whiteboard.png)
 
 ## Why this exists
 
