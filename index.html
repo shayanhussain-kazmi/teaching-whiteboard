@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Teaching Whiteboard</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#4f7cff">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--line:#e2e5e9;--muted:#6b7280;--ac:#4f7cff;box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;color:#1f2328;color-scheme:light;font:14px system-ui,"Segoe UI",sans-serif;background:radial-gradient(1100px 600px at 15% -10%,#dfe8ff,transparent),radial-gradient(900px 500px at 100% 100%,#ece3ff,transparent),#e9ecf3}
+#stage{position:fixed;inset:0;touch-action:none;user-select:none;cursor:none}
+#stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.pill{position:fixed;display:flex;align-items:center;gap:3px;padding:6px;border-radius:18px;background:rgba(255,255,255,.82);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.9);box-shadow:0 10px 32px rgba(40,60,120,.16);z-index:3}
+button{all:unset;cursor:pointer;min-width:34px;height:34px;border-radius:10px;display:grid;place-items:center;transition:background .12s,transform .12s;box-sizing:border-box}
+button:hover{background:#eef1f6}button:active{transform:scale(.94)}
+button.on{background:linear-gradient(135deg,#4f7cff,#8b5cf6);color:#fff;box-shadow:0 4px 14px rgba(91,110,255,.45)}
+button.t{padding:0 10px;font-size:12.5px;font-weight:600;white-space:nowrap}
+svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#tools{left:12px;top:50%;transform:translateY(-50%);flex-direction:column}
+#opts{left:66px;top:50%;transform:translateY(-50%);flex-direction:column;align-items:stretch;gap:10px;padding:12px;width:176px;font-size:12px;color:#6b7280}
+#shapes{left:50%;bottom:12px;transform:translateX(-50%)}
+#top{left:50%;top:10px;transform:translateX(-50%);flex-wrap:wrap;justify-content:center;max-width:96vw}
+#zoom{right:12px;bottom:12px}
+#nm{all:unset;width:130px;font-weight:600;padding:0 8px;border-radius:8px}#nm:focus{background:#eef1f6}
+.dot{min-width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}.dot.on{box-shadow:0 0 0 2px var(--ac);background-clip:padding-box}
+input[type=color]{width:26px;height:26px;border:0;padding:0;background:none;cursor:pointer}
+input[type=range]{accent-color:#5b6cff}
+#opts input[type=range]{width:100%;margin:0}#opts .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}#opts label{display:flex;flex-direction:column;gap:3px}
+#morePanel{right:12px;top:60px;width:200px;align-items:stretch;gap:2px;padding:8px}#morePanel button{width:100%;place-items:center start;padding:0 10px}
+#dlg{position:fixed;inset:0;z-index:9;display:grid;place-items:center;background:rgba(30,40,70,.28)}#dlg .box{background:#fff;border-radius:18px;padding:20px;width:min(340px,90vw);box-shadow:0 20px 60px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:16px;line-height:1.4}#dlg .btns{display:flex;gap:8px;justify-content:flex-end}#dlg button.t{height:36px;padding:0 16px;border:1px solid var(--line)}
+.off{display:none!important}
+#credit{position:fixed;left:46px;bottom:14px;font-size:11px;color:#6b7280;opacity:.6;z-index:2;pointer-events:none}
+#morePanel a{height:34px;display:flex;align-items:center;padding:0 10px;border-radius:10px;color:#1f2328;text-decoration:none;font-size:12.5px;font-weight:600}#morePanel a:hover{background:#eef1f6}
+body.hideui .pill{display:none!important}#showui{position:fixed;left:8px;bottom:8px;width:26px;height:26px;border-radius:50%;background:#fff;border:1px solid var(--line);opacity:.25;z-index:4;display:none}body.hideui #showui{display:block}#showui:hover{opacity:.9}input[type=color]::-webkit-color-swatch-wrapper{padding:0}input[type=color]::-webkit-color-swatch{border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #e2e5e9}
+hr{width:24px;border:0;border-top:1px solid var(--line);margin:2px 0}
+.panel{display:none;flex-direction:column;gap:8px;padding:14px;overflow:auto;max-height:calc(100% - 130px)}.panel.open{display:flex}
+#paperPanel{left:50%;top:60px;transform:translateX(-50%);width:min(600px,94vw)}
+#pagesPanel{right:12px;top:60px;width:210px;align-items:stretch}
+#lsPanel{left:50%;top:60px;transform:translateX(-50%);width:min(360px,94vw);align-items:stretch}
+h4{margin:6px 0;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.card{cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:5px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:11.5px;text-align:center}
+.card canvas{width:100%;aspect-ratio:16/9;border-radius:7px;border:1px solid var(--line)}
+.card.on{border-color:var(--ac);box-shadow:0 0 0 2px rgba(79,124,255,.3)}
+.ctl{display:grid;grid-template-columns:130px 1fr 40px;align-items:center;gap:8px;font-size:12.5px}
+.li{padding:9px 10px;border-radius:10px;cursor:pointer;background:#fff;border:1px solid var(--line)}.li:hover{border-color:var(--ac)}
+#tin{position:fixed;display:none;z-index:6;border:1px dashed var(--ac);background:rgba(255,255,255,.6);outline:none;padding:0 2px;font-family:system-ui,"Noto Nastaliq Urdu","Jameel Noori Nastaleeq",serif}
+</style></head><body>
+<div id="stage"><canvas id="paper"></canvas><canvas id="ink"></canvas><canvas id="live"></canvas></div>
+<input id="tin" dir="auto">
+
+<div class="pill" id="top">
+ <input id="nm" value="Untitled lesson" title="Rename lesson">
+ <button id="pp" title="Previous page (PageUp)">◀</button><span id="pn" style="min-width:38px;text-align:center"></span><button id="pnx" title="Next page (PageDown)">▶</button>
+ <button class="t" id="addp" title="Add page">+ Page</button><button class="t" id="paperBtn"></button><button class="t" id="pgBtn">Pages</button><button class="t" id="moreBtn" title="More">⋯</button>
+</div>
+<div class="pill panel" id="morePanel"><button class="t" id="lsBtn">Open / new lesson</button><button class="t" id="dupp">Duplicate page</button><button class="t" id="delp">Delete page</button><button class="t" id="clr">Clear page</button><button class="t" id="png">Export page (PNG)</button><button class="t" id="pdfb">Export lesson (PDF)</button><button class="t" id="fsb">Full screen</button><hr style="width:calc(100% - 20px)"><a href="https://www.linkedin.com/in/shayan-hussain51214/" target="_blank" rel="noopener">LinkedIn · Shayan Hussain</a><a href="https://github.com/shayanhussain-kazmi" target="_blank" rel="noopener">GitHub · shayanhussain-kazmi</a></div>
+<div class="pill" id="tools"></div>
+<div class="pill" id="opts"></div>
+<div class="pill" id="shapes"></div>
+<div class="pill" id="zoom"><button id="zo">−</button><button class="t" id="zv">100%</button><button id="zi">+</button><button class="t" id="fit" title="Back to start (0)">Home</button></div>
+<div class="pill panel" id="paperPanel"><div id="cards"></div><div><h4>Customise this page</h4>
+ <div class="ctl"><span>Line / grid spacing</span><input type="range" id="c-sp" min="14" max="120" step="2"><b id="v-sp"></b></div>
+ <div class="ctl"><span>Line colour</span><input type="color" id="c-line"><span></span></div>
+ <div class="ctl"><span>Paper colour</span><input type="color" id="c-bg"><span></span></div>
+ <div class="ctl"><span>Margin</span><input type="checkbox" id="c-mon"><span></span></div>
+ <div class="ctl"><span>Margin side</span><span><button class="t" data-side="left">Left</button><button class="t" data-side="right">Right</button></span><span></span></div></div></div>
+<div class="pill panel" id="pagesPanel"></div>
+<div class="pill panel" id="lsPanel"></div>
+<button id="showui" title="Show tools (H)"></button>
+<div id="credit">Built by Shayan Hussain · github.com/shayanhussain-kazmi</div>
+<div id="dlg" class="off"><div class="box"><div id="dmsg"></div><div class="btns"><button class="t" id="dno"></button><button class="t on" id="dok"></button></div></div></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const RED='#d96a7f', DK='#4b4b5c', TOOLS={pen:{w:1,op:1,pr:1},pencil:{w:.7,op:.8,pr:1},marker:{w:3,op:.55},hl:{w:7,op:.4,mul:1}};
+const IC={pen:'M4 20l1-4L16 5l3 3L8 19z',pencil:'M4 20h4L19 9l-4-4L4 16zM13 7l4 4',marker:'M6 19l1.5-4.5L16 6l3 3-8.5 8.5zM6 19h6',hl:'M5 17l7-7 4 4-5 5H5zM14 8l3-3 3 3-3 3',eraser:'M4 15l8-8 7 7-5 5H8zM8 19h12',laser:'M12 9a3 3 0 100 6 3 3 0 000-6zM12 3v3M12 18v3M3 12h3M18 12h3',text:'M6 6h12M12 6v13M9 19h6',hand:'M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3',undo:'M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3',redo:'M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3',line:'M5 19L19 5',rect:'M5 6h14v12H5z',ellipse:'M12 6c4.4 0 8 2.7 8 6s-3.6 6-8 6-8-2.7-8-6 3.6-6 8-6z',tri:'M12 5l8 14H4z',arrow:'M5 19L19 5M10 5h9v9'};
+const ico=n=>`<svg viewBox="0 0 24 24"><path d="${IC[n]}"/></svg>`;
+const S={tool:'pen',color:'#111111',size:3,smooth:.6,assist:true,cur:null,hover:null,pan:null,space:false,lz:[],er:null};
+const stage=$('#stage'),paperC=$('#paper'),inkC=$('#ink'),liveC=$('#live');
+const pc=paperC.getContext('2d'),ic=inkC.getContext('2d'),lc=liveC.getContext('2d',{desynchronized:true});
+let dpr=1;
+
+/* ================= paper templates ================= */
+const mk=(kind,sp,o={})=>Object.assign({kind,sp,line:'#b4c0d6',bg:'#ffffff',mOn:false,mSide:'left'},o);
+const GROUPS={
+ English:[['four','Four-line',mk('four',36,{line:DK,mOn:1})],['fourd','Four-line dotted',mk('four',36,{line:DK,dotted:1,mOn:1})],['single','Single-line',mk('ruled',48)],['double','Double-line',mk('double',56)]],
+ Maths:[['gs','Small grid',mk('grid',20)],['gl','Large grid',mk('grid',40)],['gm','Major grid',mk('grid',20,{major:1})],['mp','Maths working',mk('mplain',60)]],
+ Language:[['ur','Urdu',mk('ruled',64,{mOn:1,mSide:'right'})],['ar','Arabic',mk('ruled',58,{mOn:1,mSide:'right'})],['mr','Right margin',mk('ruled',48,{mOn:1,mSide:'right'})],['ml','Left margin',mk('ruled',48,{mOn:1})],['il','Interleaf',mk('interleaf',44,{mOn:1})],['pr','Plain ruled',mk('ruled',40)]],
+ General:[['bl','Blank',mk('blank',40)],['dt','Dotted',mk('dots',30)],['gt','Light grid',mk('grid',30,{line:'#dde3ee'})],['cu','Custom ruled',mk('ruled',48)]]};
+const PM={};Object.values(GROUPS).flat().forEach(([id,name,p])=>PM[id]={name,p});
+/* Draws the paper for the visible WORLD rectangle only, using modulo arithmetic, so the
+   board is infinite: lines are generated where you look, never stored. */
+function drawPaper(c,P,x0,y0,x1,y1,kz,mn=0){
+  const lw=Math.max(1.2,mn),sp=P.sp,k=P.kind;c.strokeStyle=c.fillStyle=P.line;c.lineWidth=lw;c.setLineDash([]);
+  const L=(a,b,d,e)=>{c.beginPath();c.moveTo(a,b);c.lineTo(d,e);c.stroke()},H=y=>L(x0,y,x1,y),V=x=>L(x,y0,x,y1);
+  const fy=(st,f)=>{if(st*kz<3)return;for(let y=Math.floor(y0/st)*st;y<=y1;y+=st)f(y)},fx=(st,f)=>{if(st*kz<3)return;for(let x=Math.floor(x0/st)*st;x<=x1;x+=st)f(x)};
+  if(k==='ruled'||k==='interleaf')fy(sp,H);
+  else if(k==='double')fy(sp*1.4,y=>{H(y);H(y+sp*.3)});
+  else if(k==='four')fy(sp*5.2,y=>{c.strokeStyle=RED;H(y);H(y+3*sp);c.strokeStyle=P.line;if(P.dotted)c.setLineDash([lw*2,lw*3]);H(y+sp);H(y+2*sp);c.setLineDash([])});
+  else if(k==='grid'){const mj=v=>P.major&&Math.round(v/sp)%5===0,f=(g,l)=>v=>{c.strokeStyle=mj(v)?'#7f93b5':P.line;c.lineWidth=mj(v)?lw*1.6:lw;l(v)};fx(sp,f(0,V));fy(sp,f(0,H))}
+  else if(k==='dots'){if(sp*kz>=6)fx(sp,x=>fy(sp,y=>{c.beginPath();c.arc(x,y,Math.max(1.8,mn*1.1),0,7);c.fill()}))}
+  else if(k==='mplain'){c.setLineDash([lw*5,lw*5]);fx(800,V);c.setLineDash([])}
+  if(P.mOn&&k!=='blank'){c.strokeStyle=RED;c.lineWidth=lw*1.3;const x=P.mSide==='left'?0:1600;if(x>=x0-8&&x<=x1+8){V(x);V(x+(P.mSide==='left'?-5:5))}}
+}
+
+/* Line assist: nearest WRITING line (the baseline) for ruled-type paper; null where there is none (grid, blank...) */
+const baseY=(P,y)=>{const sp=P.sp,k=P.kind;let st,off;if(k==='four'){st=sp*5.2;off=2*sp}else if(k==='ruled'||k==='interleaf'){st=sp;off=0}else if(k==='double'){st=sp*1.4;off=sp*.3}else return null;return Math.round((y-off)/st)*st+off};
+function levelStroke(s){const P=pg().paper,sp=P.sp;if(baseY(P,0)===null)return;const ys=s.pts.map(p=>p.y).sort((a,b)=>a-b),h=ys[ys.length-1]-ys[0],xs=s.pts.map(p=>p.x),x0=Math.min(...xs),x1=Math.max(...xs),now=performance.now();let dy=null;
+  if(h>=.35*sp){const b=ys[Math.floor((ys.length-1)*.9)];dy=baseY(P,b)-b;if(Math.abs(dy)>.6*sp)dy=null;else S.ls={dy,x:x1,t:now}}   // letter bottoms sit on the baseline
+  else if(S.ls&&now-S.ls.t<3000&&Math.abs(x0-S.ls.x)<sp*3)dy=S.ls.dy;                                                              // dots and crossbars follow the letter before them
+  if(dy)s.pts.forEach(p=>p.y+=dy)}
+/* ================= document / pages ================= */
+const newPage=(paper)=>({paper:Object.assign({},paper||PM.four.p),items:[],h:[],f:[],view:{x:150,y:80,k:1}});
+let doc={id:Date.now(),name:'Untitled lesson',pages:[newPage()],cur:0};
+const pg=()=>doc.pages[doc.cur];
+let svT;function sv(){clearTimeout(svT);svT=setTimeout(async()=>{await dbq('readwrite',s=>s.put({id:doc.id,name:doc.name,upd:Date.now(),cur:doc.cur,pages:doc.pages.map(p=>({paper:p.paper,items:p.items,view:p.view}))}))},500)}
+/* IndexedDB: everything is saved on this computer, no internet needed */
+const idb=new Promise(r=>{try{const q=indexedDB.open('whiteboard',1);q.onupgradeneeded=()=>q.result.createObjectStore('l',{keyPath:'id'});q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)}catch(e){r(null)}});
+const dbq=async(m,f)=>{const d=await idb;if(!d)return;return new Promise(r=>{try{const o=f(d.transaction('l',m).objectStore('l'));o.onsuccess=()=>r(o.result);o.onerror=()=>r()}catch(e){r()}})};
+function hydrate(d){doc={id:d.id,name:d.name,cur:d.cur||0,pages:d.pages.map(p=>({paper:p.paper,items:p.items,view:p.view,h:[],f:[]}))};$('#nm').value=doc.name;go(doc.cur)}
+function go(i){doc.cur=Math.max(0,Math.min(doc.pages.length-1,i));$('#pn').textContent=`${doc.cur+1}/${doc.pages.length}`;syncCtl();vchg();pagesUI()}
+$('#pp').onclick=()=>go(doc.cur-1);$('#pnx').onclick=()=>go(doc.cur+1);
+$('#addp').onclick=()=>{doc.pages.splice(doc.cur+1,0,newPage(pg().paper));go(doc.cur+1);sv()};
+$('#dupp').onclick=()=>{const p=pg(),n=newPage(p.paper);n.items=JSON.parse(JSON.stringify(p.items));n.view={...p.view};doc.pages.splice(doc.cur+1,0,n);go(doc.cur+1);sv()};
+/* The browser's built-in popup dialogs are blocked in many embedded views, so the app uses its own dialog */
+function ask(msg,ok,label){$('#dmsg').textContent=msg;const d=$('#dlg'),y=$('#dok'),n=$('#dno');d.classList.remove('off');y.style.display=ok?'':'none';y.textContent=label||'Yes';n.textContent=ok?'Cancel':'OK';
+  y.onclick=()=>{d.classList.add('off');ok&&ok()};n.onclick=()=>d.classList.add('off')}
+$('#delp').onclick=()=>{if(doc.pages.length<2){ask('A lesson needs at least one page. Use Clear page to empty it instead.');return}ask(`Delete page ${doc.cur+1}? This cannot be undone.`,()=>{doc.pages.splice(doc.cur,1);go(doc.cur);sv()},'Delete page')};
+$('#clr').onclick=()=>{if(!pg().items.length){ask('This page is already empty.');return}ask('Clear everything on this page? You can still press Undo afterwards.',()=>{hpush();pg().items=[];ri();sv()},'Clear page')};
+$('#nm').oninput=e=>{doc.name=e.target.value;sv()};
+function pagesUI(){const b=$('#pagesPanel');b.innerHTML='<h4>Pages (drag to reorder)</h4>';doc.pages.forEach((p,i)=>{const d=document.createElement('div');d.className='card'+(i===doc.cur?' on':'');d.draggable=true;
+  const cv=document.createElement('canvas');cv.width=192;cv.height=108;const bb=bounds(p);renderTo(cv.getContext('2d'),p,bb,Math.min(192/bb.w,108/bb.h));d.append(cv,'Page '+(i+1));
+  d.onclick=()=>go(i);d.ondragstart=e=>e.dataTransfer.setData('t',i);d.ondragover=e=>e.preventDefault();
+  d.ondrop=e=>{e.preventDefault();const f=+e.dataTransfer.getData('t'),cp=pg();doc.pages.splice(i,0,doc.pages.splice(f,1)[0]);go(doc.pages.indexOf(cp));sv()};b.append(d)})}
+async function lessons(){const all=((await dbq('readonly',s=>s.getAll()))||[]).sort((a,b)=>b.upd-a.upd),b=$('#lsPanel');b.innerHTML='<h4>Saved lessons</h4>';
+  const n=document.createElement('div');n.className='li';n.textContent='+ New lesson';n.onclick=()=>{doc={id:Date.now(),name:'Untitled lesson',pages:[newPage()],cur:0};$('#nm').value=doc.name;go(0);sv();b.classList.remove('open')};b.append(n);
+  all.forEach(d=>{const e=document.createElement('div');e.className='li';e.textContent=`${d.name} · ${d.pages.length} pg · ${new Date(d.upd).toLocaleDateString()}`;e.onclick=()=>{hydrate(d);b.classList.remove('open')};b.append(e)})}
+
+/* ================= view / coordinates =================
+   screen = world * k + (x,y). Items are stored in WORLD units, so zoom never alters data. */
+const vw=c=>{const v=pg().view;c.setTransform(dpr*v.k,0,0,dpr*v.k,dpr*v.x,dpr*v.y)};
+const toW=e=>{const r=stage.getBoundingClientRect(),v=pg().view;return{x:(e.clientX-r.left-v.x)/v.k,y:(e.clientY-r.top-v.y)/v.k}};
+function rp(){const P=pg().paper,v=pg().view;pc.setTransform(1,0,0,1,0,0);pc.fillStyle=P.bg;pc.fillRect(0,0,paperC.width,paperC.height);vw(pc);
+  const x0=-v.x/v.k,y0=-v.y/v.k;drawPaper(pc,P,x0,y0,x0+stage.clientWidth/v.k,y0+stage.clientHeight/v.k,v.k)}
+function ri(){ic.setTransform(1,0,0,1,0,0);ic.clearRect(0,0,inkC.width,inkC.height);vw(ic);pg().items.forEach(s=>drawItem(ic,s))}
+function vchg(){$('#zv').textContent=Math.round(pg().view.k*100)+'%';rp();ri();rl()}
+function zoomAt(cx,cy,k){const v=pg().view;k=Math.min(8,Math.max(.05,k));v.x=cx-(cx-v.x)*k/v.k;v.y=cy-(cy-v.y)*k/v.k;v.k=k;vchg()}
+const zc=f=>zoomAt(stage.clientWidth/2,stage.clientHeight/2,pg().view.k*f);
+$('#zi').onclick=()=>zc(1.25);$('#zo').onclick=()=>zc(.8);$('#zv').onclick=()=>zc(1/pg().view.k);
+$('#fit').onclick=()=>{pg().view={x:150,y:80,k:Math.min(1,(stage.clientWidth-220)/1600)};vchg();sv()};
+stage.addEventListener('wheel',e=>{e.preventDefault();const v=pg().view;if(e.ctrlKey){const r=stage.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,v.k*Math.exp(-e.deltaY*.01))}else{v.x-=e.deltaX;v.y-=e.deltaY;vchg()}},{passive:false});
+
+/* ================= drawing items ================= */
+const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+const FONT=z=>`${z}px system-ui,"Noto Nastaliq Urdu","Jameel Noori Nastaleeq",serif`;
+function shapePts(s){const{a,b}=s;switch(s.kind){
+  case'line':return[[a,b]];case'rect':return[[a,{x:b.x,y:a.y},b,{x:a.x,y:b.y},a]];
+  case'tri':{const t={x:(a.x+b.x)/2,y:a.y};return[[t,b,{x:a.x,y:b.y},t]]}
+  case'ellipse':{const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2,rx=Math.abs(b.x-a.x)/2,ry=Math.abs(b.y-a.y)/2,o=[];for(let i=0;i<=48;i++){const t=i/48*6.2832;o.push({x:cx+rx*Math.cos(t),y:cy+ry*Math.sin(t)})}return[o]}
+  case'arrow':{const an=Math.atan2(b.y-a.y,b.x-a.x),h=Math.max(12,s.w*4),p=d=>({x:b.x-h*Math.cos(an+d),y:b.y-h*Math.sin(an+d)});return[[a,b],[p(.45),b,p(-.45)]]}}}
+function poly(c,p){c.beginPath();c.moveTo(p[0].x,p[0].y);for(let i=1;i<p.length;i++)c.lineTo(p[i].x,p[i].y);c.stroke()}
+function drawItem(c,s){c.lineCap=c.lineJoin='round';c.strokeStyle=c.fillStyle=s.color;
+  if(s.t==='h'){c.lineWidth=s.w;shapePts(s).forEach(p=>poly(c,p));return}
+  if(s.t==='x'){c.font=FONT(s.z);c.textBaseline='top';c.fillText(s.s,s.x,s.y);return}
+  const p=s.pts;
+  if(p.length===1){c.save();c.globalAlpha=s.op;c.beginPath();c.arc(p[0].x,p[0].y,s.w*(s.pr?.35+1.3*p[0].p:1)/2,0,7);c.fill();c.restore();return}
+  if(s.op<1){c.save();c.globalAlpha=s.op;if(s.mul)c.globalCompositeOperation='multiply';c.lineWidth=s.w;   // one single path: no dark overlaps
+    c.beginPath();c.moveTo(p[0].x,p[0].y);for(let i=1;i<p.length-1;i++){const m=mid(p[i],p[i+1]);c.quadraticCurveTo(p[i].x,p[i].y,m.x,m.y)}c.lineTo(p[p.length-1].x,p[p.length-1].y);c.stroke();c.restore();return}
+  let f=p[0];for(let i=1;i<p.length;i++){const t=i<p.length-1?mid(p[i],p[i+1]):p[i];
+    c.lineWidth=s.w*(s.pr?.35+1.3*(p[i-1].p+p[i].p)/2:1);c.beginPath();c.moveTo(f.x,f.y);c.quadraticCurveTo(p[i].x,p[i].y,t.x,t.y);c.stroke();f=t}}
+function bbox(s){if(s.t==='x')return[s.x,s.y,s.x+s.wd,s.y+s.z];const L=s.t==='s'?[s.pts]:shapePts(s),a=L.flat();
+  return[Math.min(...a.map(q=>q.x))-s.w,Math.min(...a.map(q=>q.y))-s.w,Math.max(...a.map(q=>q.x))+s.w,Math.max(...a.map(q=>q.y))+s.w]}
+const dseg=(p,a,b)=>{const dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy;let t=l?((p.x-a.x)*dx+(p.y-a.y)*dy)/l:0;t=Math.max(0,Math.min(1,t));return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy)};
+function hit(s,p,r){if(s.t==='x')return p.x>s.x-r&&p.x<s.x+s.wd+r&&p.y>s.y-r&&p.y<s.y+s.z+r;
+  return(s.t==='s'?[s.pts]:shapePts(s)).some(l=>l.some((q,i)=>dseg(p,q,l[i+1]||q)<r+s.w/2))}
+
+/* ================= history (snapshots of the item list; items are never mutated) ================= */
+function hpush(){const p=pg();p.h.push(p.items.slice());p.f=[]}
+const undo=()=>{const p=pg();if(p.h.length){p.f.push(p.items);p.items=p.h.pop();ri();sv()}};
+const redo=()=>{const p=pg();if(p.f.length){p.h.push(p.items);p.items=p.f.pop();ri();sv()}};
+
+/* ================= live layer ================= */
+let q=false;function rl(){if(q)return;q=true;requestAnimationFrame(()=>{q=false;drawLive()})}
+function drawLive(){lc.setTransform(1,0,0,1,0,0);lc.clearRect(0,0,liveC.width,liveC.height);const k=pg().view.k;
+  if(S.cur){vw(lc);drawItem(lc,S.cur)}
+  const now=performance.now();S.lz=S.lz.filter(p=>now-p.t<900);
+  lc.setTransform(dpr,0,0,dpr,0,0);
+  S.lz.forEach((p,i)=>{const a=1-(now-p.t)/900;lc.beginPath();lc.arc(p.x,p.y,5+a*5,0,7);lc.fillStyle=`rgba(255,40,60,${a*.5})`;lc.fill()});
+  if(S.lz.length)rl();
+  const h=S.hover;if(h&&S.tool!=='hand'&&!S.space&&S.tool!=='text'){const cf=TOOLS[S.tool];
+    const r=Math.max(3,(S.tool==='eraser'?erR():S.size*(cf?cf.w:1)/2)*k);
+    lc.beginPath();lc.arc(h.x,h.y,r,0,7);lc.fillStyle=S.tool==='eraser'?'rgba(120,120,120,.15)':S.color;lc.globalAlpha=.35;lc.fill();lc.globalAlpha=1;lc.lineWidth=1;lc.strokeStyle='rgba(0,0,0,.5)';lc.stroke()}}
+const erR=()=>S.size*2+8;
+
+/* ================= pointer input ================= */
+const eff=e=>(e.buttons&32||e.button===5)?'eraser':S.tool;
+stage.addEventListener('pointerdown',e=>{$$('.panel').forEach(p=>p.classList.remove('open'));if(S.pan||S.cur||S.er)return;
+  stage.setPointerCapture(e.pointerId);const t=eff(e),w=toW(e),v=pg().view;
+  if(t==='hand'||S.space||e.button===1){S.pan={sx:e.clientX,sy:e.clientY,vx:v.x,vy:v.y};return}
+  if(e.button>0&&e.button!==5)return;
+  if(t==='text'){openText(e,w);return}
+  if(t==='laser'){S.lz.push({x:e.clientX,y:e.clientY,t:performance.now()});S.laserOn=true;rl();return}
+  if(t==='eraser'){S.er={did:false};erase(w);return}
+  if(TOOLS[t]){const c=TOOLS[t];S.cur={t:'s',color:S.color,w:S.size*c.w,op:c.op,mul:c.mul,pr:c.pr&&e.pointerType==='pen',pts:[]};addPts(e)}
+  else S.cur={t:'h',kind:t,color:S.color,w:S.size,a:w,b:w}});
+stage.addEventListener('pointermove',e=>{const r=stage.getBoundingClientRect();S.hover={x:e.clientX-r.left,y:e.clientY-r.top};const v=pg().view;
+  if(S.pan){v.x=S.pan.vx+e.clientX-S.pan.sx;v.y=S.pan.vy+e.clientY-S.pan.sy;vchg()}
+  else if(S.er)erase(toW(e));
+  else if(S.cur){S.cur.t==='s'?addPts(e):S.cur.b=toW(e)}
+  else if(S.laserOn&&e.buttons)S.lz.push({x:e.clientX,y:e.clientY,t:performance.now()});
+  rl()});
+function addPts(e){/* coalesced events = every tablet sample, so fast handwriting stays smooth */
+  const ev=e.getCoalescedEvents?e.getCoalescedEvents():[],k=pg().view.k;
+  (ev.length?ev:[e]).forEach(x=>{const w=toW(x),pts=S.cur.pts,l=pts[pts.length-1];if(l&&Math.hypot(w.x-l.x,w.y-l.y)<.4/k)return;
+    let p=x.pointerType==='pen'?(x.pressure||.5):.5;if(l)p=l.p+(p-l.p)*.5;S.cur.end={x:w.x,y:w.y,p};
+    /* stabiliser: the ink point only moves part of the way toward the real pen position, which filters out hand wobble */
+    if(l){const a=1-S.smooth*.9;w.x=l.x+(w.x-l.x)*a;w.y=l.y+(w.y-l.y)*a}pts.push({x:w.x,y:w.y,p})})}
+function erase(w){const p=pg(),r=erR()/1,keep=p.items.filter(s=>!hit(s,w,r));
+  if(keep.length!==p.items.length){if(!S.er.did){hpush();S.er.did=true}p.items=keep;ri()}}
+function end(){S.pan=null;S.laserOn=false;if(S.er){S.er=null;sv()}
+  if(S.cur){const s=S.cur;S.cur=null;if(s.t==='s'&&s.end&&s.pts.length>1)s.pts.push(s.end);delete s.end;if(S.assist&&s.t==='s'&&s.pts.length>1&&PEN.includes(S.tool))levelStroke(s);const ok=s.t==='s'?s.pts.length:Math.hypot(s.b.x-s.a.x,s.b.y-s.a.y)>3;
+    if(ok){hpush();pg().items.push(s);ic.save();vw(ic);drawItem(ic,s);ic.restore();sv()}}rl()}
+['pointerup','pointercancel'].forEach(n=>stage.addEventListener(n,end));
+stage.addEventListener('pointerleave',()=>{if(!S.cur){S.hover=null;rl()}});
+stage.addEventListener('contextmenu',e=>e.preventDefault());
+
+/* ================= text ================= */
+const tin=$('#tin');let tPos=null;
+function openText(e,w){commitText();const z=S.size*2+16,k=pg().view.k;tPos={w,z};Object.assign(tin.style,{display:'block',left:e.clientX+'px',top:e.clientY+'px',font:FONT(z*k),color:S.color});tin.value='';setTimeout(()=>tin.focus(),0)}
+function commitText(){if(!tPos)return;const v=tin.value.trim(),t=tPos;tPos=null;tin.style.display='none';if(!v)return;
+  ic.font=FONT(t.z);hpush();pg().items.push({t:'x',x:t.w.x,y:t.w.y,s:v,z:t.z,color:S.color,wd:ic.measureText(v).width});ri();sv()}
+tin.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')commitText();if(e.key==='Escape'){tin.value='';commitText()}};tin.onblur=commitText;
+
+/* ================= export ================= */
+function bounds(p){let x0=0,y0=0,x1=1600,y1=900;p.items.forEach(s=>{const b=bbox(s);x0=Math.min(x0,b[0]);y0=Math.min(y0,b[1]);x1=Math.max(x1,b[2]);y1=Math.max(y1,b[3])});return{x:x0-40,y:y0-40,w:x1-x0+80,h:y1-y0+80}}
+function renderTo(c,p,b,s){c.setTransform(s,0,0,s,-b.x*s,-b.y*s);c.fillStyle=p.paper.bg;c.fillRect(b.x,b.y,b.w,b.h);
+  drawPaper(c,p.paper,b.x,b.y,b.x+b.w,b.y+b.h,s,.8/s);p.items.forEach(i=>drawItem(c,i))}
+function pageCanvas(p){const b=bounds(p),s=Math.min(2,4000/Math.max(b.w,b.h)),c=document.createElement('canvas');c.width=Math.round(b.w*s);c.height=Math.round(b.h*s);renderTo(c.getContext('2d'),p,b,s);stamp(c);return c}
+/* small credit line in the corner of every exported page */
+function stamp(c){const x=c.getContext('2d'),f=Math.max(11,c.width/110);x.setTransform(1,0,0,1,0,0);x.font=f+'px system-ui,sans-serif';x.fillStyle='rgba(90,100,120,.6)';x.textAlign='right';x.textBaseline='bottom';x.fillText('Teaching Whiteboard by Shayan Hussain · github.com/shayanhussain-kazmi',c.width-f,c.height-f*.6)}
+function save(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+$('#png').onclick=()=>pageCanvas(pg()).toBlob(b=>save(b,`${doc.name}-page${doc.cur+1}.png`));
+$('#pdfb').onclick=()=>{const im=doc.pages.map(p=>{const c=pageCanvas(p),d=atob(c.toDataURL('image/jpeg',.92).split(',')[1]),u=new Uint8Array(d.length);for(let i=0;i<d.length;i++)u[i]=d.charCodeAt(i);return{w:c.width,h:c.height,d:u}});save(mkPdf(im),doc.name+'.pdf')};
+function mkPdf(im){const E=new TextEncoder(),ch=[],xr=[];let off=0;const W=s=>{const b=typeof s==='string'?E.encode(s):s;ch.push(b);off+=b.length},O=(n,b)=>{xr[n]=off;W(`${n} 0 obj\n${b}\nendobj\n`)};
+  W('%PDF-1.4\n');const N=im.length;O(1,'<</Type/Catalog/Pages 2 0 R>>');O(2,`<</Type/Pages/Count ${N}/Kids[${im.map((_,i)=>`${3+3*i} 0 R`).join(' ')}]>>`);
+  im.forEach((m,i)=>{const p=3+3*i,pw=Math.round(m.w/2),ph=Math.round(m.h/2),c=`q ${pw} 0 0 ${ph} 0 0 cm /I Do Q`;
+    O(p,`<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${pw} ${ph}]/Contents ${p+1} 0 R/Resources<</XObject<</I ${p+2} 0 R>>>>>>`);O(p+1,`<</Length ${c.length}>>\nstream\n${c}\nendstream`);
+    xr[p+2]=off;W(`${p+2} 0 obj\n<</Type/XObject/Subtype/Image/Width ${m.w}/Height ${m.h}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${m.d.length}>>\nstream\n`);W(m.d);W('\nendstream\nendobj\n')});
+  const xo=off;let x=`xref\n0 ${3+3*N}\n0000000000 65535 f \n`;for(let n=1;n<3+3*N;n++)x+=String(xr[n]).padStart(10,'0')+' 00000 n \n';
+  W(x+`trailer\n<</Size ${3+3*N}/Root 1 0 R>>\nstartxref\n${xo}\n%%EOF`);return new Blob(ch,{type:'application/pdf'})}
+$('#fsb').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+
+/* ================= UI ================= */
+const mkBtn=(par,id,title,fn)=>{const b=document.createElement('button');b.dataset.tool=id;b.title=title;b.innerHTML=ico(id);b.onclick=fn;par.append(b);return b};
+const PEN=['pen','pencil','marker'],SHP=['line','rect','ellipse','tri','arrow'];
+[['pen','Pen (P)'],['hl','Highlighter (U)'],['eraser','Eraser (E)'],['text','Text (T)'],['shape','Shapes'],['laser','Laser pointer (L)'],['hand','Pan (hold Space)']].forEach(([id,t])=>{const b=mkBtn($('#tools'),id,t,()=>setTool(id==='pen'?(S.ps||'pen'):id==='shape'?(S.ss||'line'):id));if(id==='shape')b.innerHTML=ico('rect')});
+$('#tools').append(document.createElement('hr'));
+[['undo','Undo (Ctrl+Z)',undo],['redo','Redo (Ctrl+Y)',redo]].forEach(([id,t,f])=>{const b=mkBtn($('#tools'),id,t,f);b.removeAttribute('data-tool')});
+['line','rect','ellipse','tri','arrow'].forEach(id=>mkBtn($('#shapes'),id,id[0].toUpperCase()+id.slice(1),()=>setTool(id)));
+function setTool(t){commitText();S.tool=t;if(PEN.includes(t))S.ps=t;if(SHP.includes(t))S.ss=t;if(t==='hl'&&S.color==='#111111')S.color='#facc15';if(PEN.includes(t)&&S.color==='#facc15')S.color='#111111';
+  $$('[data-tool]').forEach(b=>{const d=b.dataset.tool,tb=b.closest('#tools');b.classList.toggle('on',d===t||!!(tb&&((d==='pen'&&PEN.includes(t))||(d==='shape'&&SHP.includes(t)))))});
+  $('#shapes').classList.toggle('off',!SHP.includes(t));$('#opts').classList.toggle('off',t==='laser'||t==='hand');
+  $('#stylerow').classList.toggle('off',!PEN.includes(t));$('#penrow').classList.toggle('off',!PEN.includes(t));$('#colrow').classList.toggle('off',t==='eraser');
+  mark();stage.style.cursor=t==='hand'?'grab':'none';rl()}
+const COLORS=['#111111','#1d4ed8','#dc2626','#16a34a','#f97316','#7c3aed'],o=$('#opts');
+const el=h=>{const d=document.createElement('div');d.innerHTML=h;return d.firstElementChild};
+const sr=el('<div class="row" id="stylerow"></div>');[['pen','Pen'],['pencil','Pencil'],['marker','Marker']].forEach(([id,t])=>{const b=document.createElement('button');b.className='t';b.dataset.tool=id;b.textContent=t;b.onclick=()=>setTool(id);sr.append(b)});
+const cr=el('<div class="row" id="colrow"></div>');
+COLORS.forEach(c=>{const b=document.createElement('button');b.className='dot';b.style.background=c;b.title=c;b.onclick=()=>{S.color=c;mark()};cr.append(b)});
+const pk=document.createElement('input');pk.type='color';pk.title='Custom colour';pk.oninput=()=>{S.color=pk.value;mark()};cr.append(pk);
+const sz=document.createElement('input');sz.type='range';sz.min=1;sz.max=30;sz.value=S.size;sz.oninput=()=>{S.size=+sz.value;rl()};const szr=el('<label>Thickness</label>');szr.append(sz);
+const sm=document.createElement('input');sm.type='range';sm.min=0;sm.max=100;sm.value=S.smooth*100;sm.oninput=()=>{S.smooth=sm.value/100};const smr=el('<label>Steady hand</label>');smr.append(sm);
+const as=document.createElement('input');as.type='checkbox';as.checked=true;as.onchange=()=>{S.assist=as.checked};const asr=el('<label style="flex-direction:row;align-items:center;gap:6px"></label>');asr.append(as,'Keep writing on the line');
+const pr=el('<div id="penrow" style="display:flex;flex-direction:column;gap:10px"></div>');pr.append(smr,asr);o.append(sr,cr,szr,pr);
+function mark(){$$('#colrow .dot').forEach(b=>b.classList.toggle('on',b.title===S.color));rl()}
+/* paper panel */
+function applyPreset(id){pg().paper=Object.assign({id},PM[id].p);syncCtl();rp();pagesUI();sv()}
+function syncCtl(){const p=pg().paper,g=i=>document.getElementById(i);$('#paperBtn').textContent=(PM[p.id]?PM[p.id].name:'Paper')+' ▾';
+  g('c-sp').value=p.sp;g('v-sp').textContent=p.sp;g('c-line').value=p.line;g('c-bg').value=p.bg;g('c-mon').checked=!!p.mOn;
+  $$('[data-side]').forEach(b=>b.classList.toggle('on',b.dataset.side===p.mSide));$$('.card[data-id]').forEach(c=>c.classList.toggle('on',c.dataset.id===p.id))}
+for(const[grp,items]of Object.entries(GROUPS)){$('#cards').insertAdjacentHTML('beforeend',`<h4>${grp}</h4><div class="cards"></div>`);const row=$('#cards').lastElementChild;
+  items.forEach(([id,name,p])=>{const d=document.createElement('div');d.className='card';d.dataset.id=id;const cv=document.createElement('canvas');cv.width=224;cv.height=126;
+    const c=cv.getContext('2d'),s=224/1000;c.fillStyle=p.bg;c.fillRect(0,0,224,126);c.setTransform(s,0,0,s,0,0);drawPaper(c,p,0,0,1000,563,s,.9/s);d.append(cv,name);d.onclick=()=>applyPreset(id);row.append(d)})}
+[['c-sp','sp'],['c-line','line'],['c-bg','bg']].forEach(([id,k])=>document.getElementById(id).oninput=e=>{pg().paper[k]=k==='sp'?+e.target.value:e.target.value;syncCtl();rp();sv()});
+$('#c-mon').onchange=e=>{pg().paper.mOn=e.target.checked;rp();sv()};
+$$('[data-side]').forEach(b=>b.onclick=()=>{pg().paper.mSide=b.dataset.side;syncCtl();rp();sv()});
+const tog=(btn,pan,f)=>$(btn).onclick=e=>{e.stopPropagation();const p=$(pan),was=p.classList.contains('open');$$('.panel').forEach(x=>x.classList.remove('open'));if(!was){if(f)f();p.classList.add('open')}};
+tog('#paperBtn','#paperPanel');tog('#moreBtn','#morePanel');$('#morePanel').addEventListener('click',e=>{if(e.target.closest('button'))$('#morePanel').classList.remove('open')});tog('#pgBtn','#pagesPanel',pagesUI);tog('#lsBtn','#lsPanel',lessons);
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'&&e.target.type!=='range'&&e.target.type!=='checkbox')return;const k=e.key.toLowerCase();
+  if(e.ctrlKey&&k==='z'){e.preventDefault();e.shiftKey?redo():undo()}else if(e.ctrlKey&&k==='y'){e.preventDefault();redo()}
+  else if(k===' '){e.preventDefault();S.space=true;stage.style.cursor='grab'}
+  else if(k==='h'||k==='x'){e.preventDefault();toggleUI()}
+  else if(k==='pageup')go(doc.cur-1);else if(k==='pagedown')go(doc.cur+1);else if(k==='0')$('#fit').click();else if(k==='+'||k==='=')zc(1.25);else if(k==='-')zc(.8);
+  else{const m={p:'pen',n:'pencil',m:'marker',u:'hl',e:'eraser',l:'laser',t:'text'}[k];if(m){e.preventDefault();setTool(m)}}});
+/* H or X hides every panel so only the board is visible; press again to bring them back */
+function toggleUI(){commitText();$$('.panel').forEach(p=>p.classList.remove('open'));document.body.classList.toggle('hideui')}
+$('#showui').onclick=toggleUI;
+addEventListener('keyup',e=>{if(e.key===' '){S.space=false;setTool(S.tool)}});
+function resize(){dpr=devicePixelRatio||1;[paperC,inkC,liveC].forEach(c=>{c.width=Math.round(stage.clientWidth*dpr);c.height=Math.round(stage.clientHeight*dpr)});vchg()}
+addEventListener('resize',resize);
+(async()=>{const all=(await dbq('readonly',s=>s.getAll()))||[];resize();if(all.length)hydrate(all.sort((a,b)=>b.upd-a.upd)[0]);else go(0);
+  setTool('pen');syncCtl()})();
+</script><script>
+/* Service worker: lets the browser keep a copy of the app so it opens offline and can be installed */
+if('serviceWorker' in navigator && location.protocol.startsWith('http')) addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body></html>
